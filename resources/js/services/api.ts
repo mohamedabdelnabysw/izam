@@ -55,8 +55,15 @@ class ApiService {
 
   // Authentication
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await this.api.post<ApiResponse<LoginResponse>>('/login', credentials);
-    return response.data.data;
+    try {
+      const response = await this.api.post<ApiResponse<LoginResponse>>('/login', credentials); 
+      console.log('Login response:', response.data);
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Login API error:', error);
+      console.error('Error response:', error.response?.data);
+      throw error;
+    }
   }
 
   async logout(): Promise<void> {
@@ -72,7 +79,7 @@ class ApiService {
   }
 
   // Products
-  async getProducts(filters?: ProductFilters): Promise<PaginatedResponse<Product>> {
+  async getProducts(filters?: ProductFilters, page?: number): Promise<PaginatedResponse<Product>> {
     const params = new URLSearchParams();
     
     if (filters) {
@@ -88,6 +95,9 @@ class ApiService {
           }
         }
       });
+    }
+    if (page !== undefined) {
+      params.append('page', page.toString());
     }
 
     const response = await this.api.get<PaginatedResponse<Product>>(`/products?${params.toString()}`);

@@ -101,6 +101,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  message: string;
   user: {
     id: number;
     name: string;
