@@ -120,11 +120,11 @@ npm run lint
 
 This project is licensed under the MIT License.
 
-## Author
+## you can use
 
-**Nasr** - *Lead Developer*
-- GitHub: [@nasr](https://github.com/nasr)
+**Nasr** - *fake email*
 - Email: nasr@example.com
+- Password: password
 
 ## Support
 
