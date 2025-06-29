@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Button,
   Box,
   Container,
-  Badge,
-  IconButton,
   Drawer,
   useTheme,
   useMediaQuery,
 } from '@mui/material';
-import { ShoppingCart, Logout, Person, Login, FilterList } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
@@ -20,6 +13,12 @@ import OrderSummary from './OrderSummary';
 import FilterSidebar from './FilterSidebar';
 import { Category, ProductFilters } from '../types/api';
 import apiService from '../services/api';
+import { AppHeader } from './app-header';
+import { ShoppingCart, Logout, Person, Login, FilterList } from '@mui/icons-material';
+import {
+  Badge,
+  IconButton,
+} from '@mui/material';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -88,69 +87,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flexGrow: 1, cursor: 'pointer' }}
-            onClick={() => navigate('/products')}
-          >
-            E-izam Store
-          </Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {/* Filter Button - Mobile */}
-            {isMobile && (
-              <IconButton
-                color="inherit"
-                onClick={toggleFilterSidebar}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-              >
-                <FilterList />
-              </IconButton>
-            )}
-            <IconButton
-              color="inherit"
-              onClick={() => navigate('/products')}
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              <Badge badgeContent={getTotalItems()} color="secondary">
-                <ShoppingCart />
-              </Badge>
-            </IconButton>
-            {user ? (
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Person />
-                  <Typography variant="body2">
-                    {user.name}
-                  </Typography>
-                </Box>
-                <Button
-                  color="inherit"
-                  startIcon={<Logout />}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
-              </Box>
-            ) : (
-              <Button
-                color="inherit"
-                startIcon={<Login />}
-                onClick={handleLogin}
-              >
-                Login
-              </Button>
-            )}
-          </Box>
-        </Toolbar>
-      </AppBar>
-      
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', backgroundColor: '#EDF2FA' }}>
+      <AppHeader />
       <Box sx={{ display: 'flex', flex: 1, alignItems: 'flex-start' }}>
         {/* Filter Toggle Button - Desktop */}
-        {!isMobile && !filterSidebarOpen && (
+        {/* {!isMobile && !filterSidebarOpen && (
           <Box
             sx={{
               position: 'sticky',
@@ -176,10 +117,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <FilterList />
             </IconButton>
           </Box>
-        )}
+        )} */}
 
         {/* Filter Sidebar - Desktop */}
-        {!isMobile && filterSidebarOpen && (
+        {/* {!isMobile && filterSidebarOpen && (
           <Box
             sx={{
               minWidth: 280,
@@ -201,18 +142,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               onClose={() => setFilterSidebarOpen(false)}
             />
           </Box>
-        )}
+        )} */}
 
-        <Container component="main" sx={{ flexGrow: 1, py: 3 }}>
+        {/* <Container component="main" sx={{ flexGrow: 1, py: 3 }}> */}
           {children}
           {/* Order Summary on mobile */}
-          <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 4 }}>
+          {/* <Box sx={{ display: { xs: 'block', md: 'none' }, mt: 4 }}>
             <OrderSummary />
-          </Box>
-        </Container>
+          </Box> */}
+        {/* </Container> */}
         
         {/* Order Summary Sidebar on desktop */}
-        <Box
+        {/* <Box
           sx={{
             display: { xs: 'none', md: 'block' },
             minWidth: 340,
@@ -226,10 +167,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
         >
           <OrderSummary />
-        </Box>
+        </Box> */}
       </Box>
 
-      {/* Filter Sidebar - Mobile Drawer */}
+      {/* Filter Sidebar - Mobile Drawer
       <Drawer
         anchor="left"
         open={isMobile && filterSidebarOpen}
@@ -250,7 +191,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             onClose={() => setFilterSidebarOpen(false)}
           />
         </Box>
-      </Drawer>
+      </Drawer> */}
     </Box>
   );
 };

@@ -1,28 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Card,
-  CardContent,
-  CardMedia,
-  Typography,
-  Button,
   Box,
   Pagination,
   Alert,
   CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Divider,
   useTheme,
   useMediaQuery,
+  Drawer,
+  IconButton,
 } from '@mui/material';
-import { Add, Remove, Delete, ShoppingCart } from '@mui/icons-material';
+import { FilterList } from '@mui/icons-material';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -32,14 +19,14 @@ import ProductCard from '../components/ProductCard';
 import ProductsHeader from '../components/ProductsHeader';
 import SearchBar from '../components/SearchBar';
 import SimpleBreadcrumbs from '../components/SimpleBreadcrumbs';
+import FilterSidebar from '../components/FilterSidebar';
+import OrderSummary from '../components/OrderSummary';
 
 const ProductsPage: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [cartOpen, setCartOpen] = useState(false);
-  
   // Filters state
   const [filters, setFilters] = useState<ProductFilters>({
     search: '',
@@ -48,17 +35,19 @@ const ProductsPage: React.FC = () => {
     category_id: [],
     per_page: 12,
   });
-  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  const { addToCart, items, removeFromCart, updateQuantity, getTotalPrice, clearCart } = useCart();
+  const { addToCart, items } = useCart();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  // Filter sidebar open/close state
+  const [filterSidebarOpen, setFilterSidebarOpen] = useState(false);
 
   // Load categories
   useEffect(() => {
@@ -81,7 +70,7 @@ const ProductsPage: React.FC = () => {
         const response = await apiService.getProducts({
           ...filters,
           per_page: 12,
-        });
+        }, currentPage);
         setProducts(response.data);
         setTotalPages(response.pagination.last_page);
         setTotalItems(response.pagination.total);
@@ -92,13 +81,12 @@ const ProductsPage: React.FC = () => {
         setLoading(false);
       }
     };
-
     loadProducts();
-  }, [filters]);
+  }, [filters, currentPage]);
 
   const handleFiltersChange = (newFilters: ProductFilters) => {
     setFilters(newFilters);
-    setCurrentPage(1); // Reset to first page when filters change
+    if (currentPage !== 1) setCurrentPage(1); // Only reset if not already on page 1
   };
 
   const handleClearFilters = () => {
@@ -109,12 +97,12 @@ const ProductsPage: React.FC = () => {
       category_id: [],
       per_page: 12,
     });
-    setCurrentPage(1);
+    if (currentPage !== 1) setCurrentPage(1);
   };
 
   const handleSearchChange = (searchTerm: string) => {
     setFilters(prev => ({ ...prev, search: searchTerm }));
-    setCurrentPage(1);
+    if (currentPage !== 1) setCurrentPage(1);
   };
 
   const getActiveFiltersCount = () => {
@@ -133,30 +121,9 @@ const ProductsPage: React.FC = () => {
     }
   };
 
-  const handleSubmitOrder = async () => {
-    if (!isAuthenticated) {
-      setError('Please login to place an order');
-      setCartOpen(false);
-      navigate('/login');
-      return;
-    }
-
-    try {
-      const orderData = {
-        products: items.map(item => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-        })),
-      };
-
-      const order = await apiService.createOrder(orderData);
-      clearCart();
-      setCartOpen(false);
-      navigate(`/orders/${order.id}`);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Error creating order');
-    }
-  };
+  // Toggle logic
+  const handleToggleFilterSidebar = () => setFilterSidebarOpen((open) => !open);
+  const handleCloseFilterSidebar = () => setFilterSidebarOpen(false);
 
   if (loading && products.length === 0) {
     return (
@@ -167,173 +134,146 @@ const ProductsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', backgroundColor: '#f5f5f5' }}>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      <Box sx={{ p: 3 }}>
-        {/* Breadcrumbs */}
-        <SimpleBreadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Products' }
-          ]}
-        />
-
-        {/* Search Bar */}
-        <SearchBar
-          value={filters.search ?? ''}
-          onChange={handleSearchChange}
-          placeholder="Search products by name, description, or category..."
-        />
-
-        {/* Results Header */}
-        <ProductsHeader
-          totalItems={totalItems}
-          isMobile={isMobile}
-          onToggleFilters={() => {}} // This is now handled in Layout
-          activeFiltersCount={getActiveFiltersCount()}
-          onCartClick={() => setCartOpen(true)}
-        />
-
-        {/* Products Grid */}
-        <Box 
-          sx={{ 
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(3, 1fr)',
-              xl: 'repeat(3, 1fr)'
-            },
-            gap: 3,
-            mt: 3
-          }}
-        >
-          {products.map((product) => (
-            <ProductCard 
-              key={product.id}
-              product={product}
-              onAddToCart={handleAddToCart}
-            />
-          ))}
-        </Box>
-
-        {/* No Products Message */}
-        {!loading && products.length === 0 && (
-          <Box 
-            sx={{ 
-              textAlign: 'center', 
-              py: 8,
-              backgroundColor: '#fff',
-              borderRadius: 2,
-              mt: 3,
-            }}
-          >
-            <Typography variant="h6" color="textSecondary" gutterBottom>
-              No products found
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Try adjusting your search or filter criteria
-            </Typography>
+    <Box sx={{ minHeight: '100vh', backgroundColor: '#EDF2FA', width: '100vw', p: 0 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: 'flex-start',
+          width: '100%',
+          minHeight: '100vh',
+          gap: isMobile ? 3 : 4,
+          background: 'transparent',
+          px: isMobile ? 1 : 4,
+          pt: isMobile ? 2 : 4,
+        }}
+      >
+        {/* Desktop: Filter Toggle Button */}
+        {!isMobile && !filterSidebarOpen && (
+          <Box sx={{ flex: '0 0 48px', width: 48, display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start', height: '100%' }}>
+            <IconButton onClick={handleToggleFilterSidebar} sx={{ mt: 0, ml: 0, background: '#f5f5f5', color: '#000', borderRadius: 2, boxShadow: 2 }}>
+              <FilterList />
+            </IconButton>
           </Box>
         )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* Desktop: Filter Sidebar */}
+        {!isMobile && filterSidebarOpen && (
+          <Box sx={{ flex: '0 0 320px', width: 320, background: '#fff', borderRadius: 3, boxShadow: 2, p: 0, minHeight: '80vh' }}>
+            <FilterSidebar
+              categories={categories}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onClose={handleCloseFilterSidebar}
+            />
+          </Box>
+        )}
+        {/* Product List */}
+        <Box sx={{ flex: 1, width: '100%', px: isMobile ? 0 : 0, py: 0, background: isMobile ? 'transparent' : '#fff', borderRadius: 3, boxShadow: isMobile ? 0 : 2, p: isMobile ? 2 : 4, minHeight: '80vh' }}>
+          {/* Breadcrumbs */}
+          <SimpleBreadcrumbs
+            items={[
+              { label: 'Home', href: '/' },
+              { label: 'Products' }
+            ]}
+          />
+          {/* Search Bar */}
+          <SearchBar
+            value={filters.search ?? ''}
+            onChange={handleSearchChange}
+            placeholder="Search products by name, description, or category..."
+          />
+          {/* Results Header */}
+          <ProductsHeader
+            totalItems={totalItems}
+            isMobile={isMobile}
+            onToggleFilters={handleToggleFilterSidebar}
+            activeFiltersCount={getActiveFiltersCount()}
+            onCartClick={() => {}}
+          />
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          <Box display="grid" gridTemplateColumns={isMobile ? '1fr' : 'repeat(3, 1fr)'} gap={2} mt={3}>
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+            ))}
+          </Box>
+          {/* Pagination */}
           <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
               count={totalPages}
               page={currentPage}
               onChange={(_, page) => setCurrentPage(page)}
               color="primary"
-              size="large"
               sx={{
-                '& .MuiPaginationItem-root': {
-                  borderRadius: 2,
+                background: '#fff',
+                borderRadius: 2,
+                px: 2,
+                py: 1,
+                boxShadow: 0,
+                '.MuiPagination-ul': {
+                  justifyContent: 'center',
+                  gap: 2,
+                },
+                '.MuiPaginationItem-root': {
+                  borderRadius: '8px',
+                  minWidth: 40,
+                  minHeight: 40,
+                  fontWeight: 500,
+                  fontSize: '1.1rem',
+                  color: '#b0b7c3',
+                  background: 'transparent',
+                  transition: 'all 0.2s',
+                },
+                '.Mui-selected': {
+                  background: '#000',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  boxShadow: 0,
+                },
+                '.MuiPaginationItem-previousNext': {
+                  color: '#b0b7c3',
+                  fontWeight: 400,
+                  fontSize: '1.1rem',
                 },
               }}
             />
           </Box>
+        </Box>
+        {/* Mobile: Order Summary below products */}
+        {/* {isMobile && (
+          <Box sx={{ width: '100%', mt: 3, background: '#fff', borderRadius: 3, boxShadow: 2, p: 2 }}>
+            <OrderSummary />
+          </Box>
+        )} */}
+        {/* Desktop: Order Summary right */}
+        {!isMobile && (
+          <Box sx={{ flex: '0 0 380px', width: 380, ml: 0, background: '#fff', borderRadius: 3, boxShadow: 2, p: 0 }}>
+            <OrderSummary />
+          </Box>
+        )}
+        {/* Mobile: Drawer for Filter Sidebar (from right) */}
+        {isMobile && (
+          <Drawer
+            anchor="right"
+            open={filterSidebarOpen}
+            onClose={handleCloseFilterSidebar}
+            PaperProps={{ sx: { width: 320 } }}
+          >
+            <FilterSidebar
+              categories={categories}
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              onClose={handleCloseFilterSidebar}
+              isMobile
+            />
+          </Drawer>
         )}
       </Box>
-
-      {/* Cart Dialog */}
-      <Dialog open={cartOpen} onClose={() => setCartOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box display="flex" alignItems="center" gap={1}>
-            <ShoppingCart />
-            Shopping Cart ({items.length} items)
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {items.length === 0 ? (
-            <Typography>Your cart is empty</Typography>
-          ) : (
-            <List>
-              {items.map((item) => (
-                <React.Fragment key={item.product_id}>
-                  <ListItem>
-                    <ListItemText
-                      primary={item.product.name}
-                      secondary={`$${item.product.price} each`}
-                    />
-                    <ListItemSecondaryAction>
-                      <Box display="flex" alignItems="center" gap={1}>
-                        <IconButton
-                          size="small"
-                          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                        >
-                          <Remove />
-                        </IconButton>
-                        <Typography>{item.quantity}</Typography>
-                        <IconButton
-                          size="small"
-                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                        >
-                          <Add />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          onClick={() => removeFromCart(item.product_id)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Box>
-                    </ListItemSecondaryAction>
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              ))}
-            </List>
-          )}
-          
-          {items.length > 0 && (
-            <Box mt={2}>
-              <Typography variant="h6">
-                Total: ${getTotalPrice().toFixed(2)}
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setCartOpen(false)}>Continue Shopping</Button>
-          {items.length > 0 && (
-            <>
-              <Button onClick={clearCart} color="error">
-                Clear Cart
-              </Button>
-              <Button onClick={handleSubmitOrder} variant="contained">
-                Place Order
-              </Button>
-            </>
-          )}
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };

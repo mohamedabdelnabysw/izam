@@ -13,9 +13,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../services/api';
 
-const SHIPPING = 15;
-const TAX = 12.5;
-
 const OrderSummary: React.FC = () => {
   const { items, updateQuantity, removeFromCart, getTotalPrice, clearCart } = useCart();
   const { isAuthenticated } = useAuth();
@@ -24,7 +21,7 @@ const OrderSummary: React.FC = () => {
   const [error, setError] = useState('');
 
   const subtotal = getTotalPrice();
-  const total = subtotal + SHIPPING + TAX;
+  const total = subtotal;
 
   const handleCheckout = async () => {
     setError('');
@@ -99,14 +96,6 @@ const OrderSummary: React.FC = () => {
       <Box display="flex" justifyContent="space-between" mb={1}>
         <Typography color="text.secondary">Subtotal</Typography>
         <Typography>${subtotal}</Typography>
-      </Box>
-      <Box display="flex" justifyContent="space-between" mb={1}>
-        <Typography color="text.secondary">Shipping</Typography>
-        <Typography>${SHIPPING.toFixed(2)}</Typography>
-      </Box>
-      <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography color="text.secondary">Tax</Typography>
-        <Typography>${TAX.toFixed(2)}</Typography>
       </Box>
       <Divider sx={{ mb: 2 }} />
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
