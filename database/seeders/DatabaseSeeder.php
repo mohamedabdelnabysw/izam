@@ -22,9 +22,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'nasr@example.com',
             'password' =>   Hash::make('password'),
         ]);
-        // $this->call([
-        //     CategorySeeder::class,
-        //     ProductSeeder::class,
-        // ]);
+        $this->call([
+            CategorySeeder::class,
+            ProductSeeder::class,
+        ]);
     }
 }
